@@ -61,7 +61,9 @@ class MyPromise {
       this.#PromiseResult = value;
 
       const onFulfilledCallBacks = this.#onFulfilledCallBacks.splice(0);
-      onFulfilledCallBacks.forEach((c) => c(value));
+      setTimeout(() => {
+        onFulfilledCallBacks.forEach((c) => c(value));
+      }, 0);
     }
   }
   reject(reason) {
@@ -72,7 +74,9 @@ class MyPromise {
     this.#PromiseResult = reason;
 
     const onRejectedCallBacks = this.#onRejectedCallBacks.splice(0);
-    onRejectedCallBacks.forEach((c) => c(reason));
+    setTimeout(() => {
+      onRejectedCallBacks.forEach((c) => c(reason));
+    }, 0);
     // throw reason;
   }
 
@@ -94,10 +98,11 @@ class MyPromise {
           reject(error);
         }
       }
+      // 模拟异步，宏任务处理
       if (this.#PromiseState === 'fulfilled') {
-        _onFulfilled(this.#PromiseResult);
+        setTimeout(() => _onFulfilled(this.#PromiseResult), 0);
       } else if (this.#PromiseState === 'rejected') {
-        _onRejected(this.#PromiseResult);
+        setTimeout(() => _onRejected(this.#PromiseResult), 0);
       } else {
         this.#onFulfilledCallBacks.push(_onFulfilled);
         this.#onRejectedCallBacks.push(_onRejected);
