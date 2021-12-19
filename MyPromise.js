@@ -5,7 +5,7 @@ function isThenable(v) {
 class MyPromise {
   // 状态 pending || fulfilled || rejected
   #PromiseState;
-  // 结果
+  // 结果值
   #PromiseResult;
   // 已兑现 回调
   #onFulfilledCallBacks;
@@ -48,13 +48,8 @@ class MyPromise {
     if (this.#PromiseState !== 'pending') return this;
 
     // value 是thenable对象
-    if (isThenable(value)) {
-      value = new MyPromise((resolve, reject) => {
-        value.then(resolve, reject);
-      })
-    }
-
-    if (value instanceof MyPromise) {
+    // 或者是MyPromise实例
+    if (isThenable(value) || value instanceof MyPromise) {
       value.then((v) => this.resolve(v), (r) => this.reject(r));
     } else {
       this.#PromiseState = 'fulfilled';
@@ -82,31 +77,30 @@ class MyPromise {
 
   then(onFulfilled, onRejected) {
     return new MyPromise((resolve, reject) => {
-      function _onFulfilled(value) {
+      const settled = (callback) => {
         try {
-          const val = typeof onFulfilled === 'function' ? onFulfilled(value) : value;
+          const val = typeof callback === 'function' ? callback(this.#PromiseResult) : this.#PromiseResult;
           resolve(val);
         } catch (error) {
           reject(error);
         }
       }
-      function _onRejected(reason) {
-        try {
-          const val = typeof onRejected === 'function' ? onRejected(reason) : reason;
-          reject(val);
-        } catch (error) {
-          reject(error);
-        }
-      }
+
       // 模拟异步，宏任务处理
       if (this.#PromiseState === 'fulfilled') {
-        setTimeout(() => _onFulfilled(this.#PromiseResult), 0);
+        setTimeout(() => settled(onFulfilled), 0);
       } else if (this.#PromiseState === 'rejected') {
-        setTimeout(() => _onRejected(this.#PromiseResult), 0);
+        // 如果 onRejected 抛出一个错误或返回一个本身失败的 Promise，通过 catch() 返回的Promise 被rejected；
+        // 否则，它将显示为成功（resolved）。 
+        setTimeout(() => settled(onRejected), 0);
       } else {
-        this.#onFulfilledCallBacks.push(_onFulfilled);
-        this.#onRejectedCallBacks.push(_onRejected);
+        this.#onFulfilledCallBacks.push(() => settled(onFulfilled));
+        this.#onRejectedCallBacks.push(() => settled(onRejected));
       }
     });
+  }
+  // promise.catch(onRejected) === promise.then(undefined, onRejected) 一致
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
   }
 }
