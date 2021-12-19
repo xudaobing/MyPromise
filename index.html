@@ -1,10 +1,17 @@
 <script src="MyPromise.js"></script>
 <script>
-let p1 = new MyPromise((resolve, reject) => {
+const p1 = new MyPromise((resolve, reject) => {
   // setTimeout(() => resolve('成功'), 1000);
-  // reject('失败')
+  // setTimeout(() => reject('失败'), 1000);
   // throw(123);
   a.b();
 })
 console.log('p1', p1);
+
+const p2 = p1.then((v) => {
+  console.log('resolve', v)
+  return '22';
+}, (e) => console.log('reject', e));
+
+console.log('p2', p2);
 </script>
